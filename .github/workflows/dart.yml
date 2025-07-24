@@ -8,45 +8,38 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      # 1️⃣ Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 2️⃣ Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.32.7'
           channel: stable
 
+      # 3️⃣ Clean project
       - name: Clean Flutter project
         run: flutter clean
 
-      # ✅ This step generates .ios/Flutter/podhelper.rb
-      - name: Generate iOS platform folders
+      # 4️⃣ Regenerate iOS tooling and .ios folder
+      - name: Generate iOS platform files
         run: flutter create .
 
+      # 5️⃣ Get dependencies
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      - name: Install CocoaPods
-        run: |
-          sudo gem install cocoapods
-          pod repo update
+      # 6️⃣ Precache iOS SDKs
+      - name: Precache iOS artifacts
+        run: flutter precache --ios
 
-      # ✅ Extra safety: run a prebuild to make sure .ios exists
-      - name: Pre-generate iOS build
-        run: flutter build ios --no-codesign || true
-
-      # ✅ Debug: check that podhelper.rb now exists
-      - name: List Flutter helper
-        run: ls -R .ios || true
-
-      - name: Run pod install
-        working-directory: ios
-        run: pod install --verbose
-
+      # 7️⃣ Build iOS (no codesign)
       - name: Build iOS (no codesign)
         run: flutter build ios --release --no-codesign
 
+      # 8️⃣ Package IPA
       - name: Create Payload folder
         working-directory: build/ios/iphoneos
         run: mkdir Payload && mv Runner.app Payload/
@@ -55,6 +48,7 @@ jobs:
         working-directory: build/ios/iphoneos
         run: zip -qq -r -9 FlutterApp.ipa Payload
 
+      # 9️⃣ Upload IPA artifact as a Release
       - name: Upload IPA to Release
         uses: svenstaro/upload-release-action@v2
         with:
