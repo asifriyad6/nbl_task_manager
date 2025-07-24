@@ -26,19 +26,30 @@ jobs:
       - name: Generate iOS platform folders
         run: flutter create .
 
-      # 5️⃣ Install dependencies
+      # 5️⃣ Install Flutter dependencies
       - name: Install dependencies
         run: flutter pub get
 
-      # 6️⃣ Precache iOS
+      # 6️⃣ Install CocoaPods (to avoid outdated pods issue)
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods
+          pod repo update
+
+      # 7️⃣ Run pod install explicitly
+      - name: Run pod install
+        working-directory: ios
+        run: pod install --verbose
+
+      # 8️⃣ Precache iOS
       - name: Precache iOS
         run: flutter precache --ios
 
-      # 7️⃣ Build iOS (no codesign)
+      # 9️⃣ Build iOS (no codesign)
       - name: Build iOS (no codesign)
         run: flutter build ios --release --no-codesign
 
-      # 8️⃣ Package IPA
+      # 🔟 Package IPA
       - name: Create Payload folder
         working-directory: build/ios/iphoneos
         run: mkdir Payload && mv Runner.app Payload/
@@ -47,7 +58,7 @@ jobs:
         working-directory: build/ios/iphoneos
         run: zip -qq -r -9 FlutterApp.ipa Payload
 
-      # 9️⃣ Upload IPA as a release artifact
+      # 1️⃣1️⃣ Upload IPA as a release artifact
       - name: Upload IPA to Release
         uses: svenstaro/upload-release-action@v2
         with:
