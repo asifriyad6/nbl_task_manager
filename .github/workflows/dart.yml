@@ -5,8 +5,7 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-latest
-
+    runs-on: macos-14   # macOS runner that has Xcode 15.4 available
     steps:
       # 1️⃣ Checkout your repository
       - name: Checkout repository
@@ -19,49 +18,51 @@ jobs:
           flutter-version: '3.32.7'
           channel: stable
 
-      # 3️⃣ Clean Flutter project
-      - name: Clean Flutter project
+      # ✅ 3️⃣ Select Xcode 15.4 (to avoid Swift 6 errors)
+      - name: Select Xcode 15.4
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+
+      # 4️⃣ Clean Flutter project
+      - name: Flutter clean
         run: flutter clean
 
-      # 4️⃣ Generate iOS platform folders (.ios, etc.)
-      - name: Generate iOS platform folders
+      # 5️⃣ Re-generate iOS tooling (ensures .ios folder and podhelper.rb)
+      - name: Regenerate iOS folder
         run: flutter create .
 
-      # 5️⃣ Install Dart dependencies
-      - name: Install dependencies
+      # 6️⃣ Install Flutter dependencies
+      - name: Install Flutter dependencies
         run: flutter pub get
 
-      # 6️⃣ Precache iOS artifacts
+      # 7️⃣ Precache iOS artifacts
       - name: Precache iOS
         run: flutter precache --ios
 
-      # 7️⃣ CocoaPods clean & install
-      - name: Clean and install CocoaPods
+      # ✅ 8️⃣ Clean & reinstall CocoaPods
+      - name: Clean & install CocoaPods
         working-directory: ios
         run: |
           pod cache clean --all
           rm -rf Pods Podfile.lock
           pod install --repo-update
 
-      # 8️⃣ Build iOS app without codesign
-      - name: Build iOS (no codesign)
+      # 9️⃣ Build iOS without codesign
+      - name: Build iOS
         run: flutter build ios --release --no-codesign
 
-      # 9️⃣ Package IPA
-      - name: Create Payload folder
+      # 🔟 Prepare Payload folder for IPA
+      - name: Create Payload
         working-directory: build/ios/iphoneos
         run: mkdir Payload && mv Runner.app Payload/
 
+      # 1️⃣1️⃣ Zip into IPA
       - name: Zip IPA
         working-directory: build/ios/iphoneos
         run: zip -qq -r -9 FlutterApp.ipa Payload
 
-      # 🔟 Upload IPA as a release artifact
-      - name: Upload IPA to Release
-        uses: svenstaro/upload-release-action@v2
+      # 1️⃣2️⃣ Upload IPA as artifact
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: build/ios/iphoneos/FlutterApp.ipa
-          tag: v1.0.0
-          overwrite: true
-          body: "First iOS release built by GitHub Actions"
+          name: FlutterApp
+          path: build/ios/iphoneos/FlutterApp.ipa
