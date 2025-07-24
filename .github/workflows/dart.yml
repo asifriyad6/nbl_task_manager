@@ -5,40 +5,33 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-14   # macOS runner that has Xcode 15.4 available
+    runs-on: macos-14
     steps:
-      # 1️⃣ Checkout your repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.32.7'
           channel: stable
 
-      # ✅ 3️⃣ Select Xcode 15.4 (to avoid Swift 6 errors)
+      # 🔥 Force Xcode 15.4 (Swift 5.10)
       - name: Select Xcode 15.4
         run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
 
-      # 4️⃣ Clean Flutter project
       - name: Flutter clean
         run: flutter clean
 
-      # 5️⃣ Re-generate iOS tooling (ensures .ios folder and podhelper.rb)
       - name: Regenerate iOS folder
         run: flutter create .
 
-      # 6️⃣ Install Flutter dependencies
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      # 7️⃣ Precache iOS artifacts
       - name: Precache iOS
         run: flutter precache --ios
 
-      # ✅ 8️⃣ Clean & reinstall CocoaPods
       - name: Clean & install CocoaPods
         working-directory: ios
         run: |
@@ -46,21 +39,17 @@ jobs:
           rm -rf Pods Podfile.lock
           pod install --repo-update
 
-      # 9️⃣ Build iOS without codesign
       - name: Build iOS
         run: flutter build ios --release --no-codesign
 
-      # 🔟 Prepare Payload folder for IPA
       - name: Create Payload
         working-directory: build/ios/iphoneos
         run: mkdir Payload && mv Runner.app Payload/
 
-      # 1️⃣1️⃣ Zip into IPA
       - name: Zip IPA
         working-directory: build/ios/iphoneos
         run: zip -qq -r -9 FlutterApp.ipa Payload
 
-      # 1️⃣2️⃣ Upload IPA as artifact
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
