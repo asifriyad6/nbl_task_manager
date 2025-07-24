@@ -6,26 +6,40 @@ on:
 jobs:
   build-ios:
     name: 🎉 iOS Build
-    runs-on: macos-latest
+    runs-on: macos-13   # ✅ Pin to macOS 13 which includes Xcode 15.2 (stable with Firebase)
     steps:
       - uses: actions/checkout@v3
+
+      # ✅ Select a specific Xcode version
+      - name: Select Xcode 15.2
+        run: sudo xcode-select -s /Applications/Xcode_15.2.app
 
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           architecture: x64
-      - run: flutter pub get
-      
 
-      - run: pod repo update
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Update CocoaPods repo
+        run: pod repo update
         working-directory: ios
 
-      - run: flutter build ios --release --no-codesign
+      # ✅ Make sure your Podfile sets platform :ios, '13.0'
+      - name: Install CocoaPods
+        run: pod install
+        working-directory: ios
 
-      - run: mkdir Payload
+      - name: Build iOS
+        run: flutter build ios --release --no-codesign
+
+      - name: Prepare IPA payload
+        run: mkdir Payload
         working-directory: build/ios/iphoneos
 
-      - run: mv Runner.app/ Payload
+      - name: Move app to Payload
+        run: mv Runner.app Payload
         working-directory: build/ios/iphoneos
 
       - name: Zip output
