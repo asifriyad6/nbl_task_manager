@@ -5,34 +5,40 @@ on:
 
 jobs:
   build-ios:
-    name: 📦 Build iOS IPA
     runs-on: macos-latest
-
     steps:
       # 1️⃣ Checkout your repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Flutter (ensure correct Flutter version with Dart 3.8.1)
+      # 2️⃣ Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.32.7'
           channel: stable
 
-      # 3️⃣ Clean Flutter project (optional but recommended)
+      # 3️⃣ Clean project
       - name: Clean Flutter project
         run: flutter clean
 
-      # 4️⃣ Install Flutter dependencies and generate iOS tooling files
-      - name: Prepare iOS build folder
-        run: flutter pub get && flutter precache ios
+      # ✅ 4️⃣ Re-generate iOS tooling (creates .ios/Flutter/podhelper.rb)
+      - name: Generate iOS platform folders
+        run: flutter create .
 
-      # 5️⃣ Build iOS without codesign
+      # 5️⃣ Install dependencies
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 6️⃣ Precache iOS
+      - name: Precache iOS
+        run: flutter precache --ios
+
+      # 7️⃣ Build iOS (no codesign)
       - name: Build iOS (no codesign)
         run: flutter build ios --release --no-codesign
 
-      # 6️⃣ Package .ipa
+      # 8️⃣ Package IPA
       - name: Create Payload folder
         working-directory: build/ios/iphoneos
         run: mkdir Payload && mv Runner.app Payload/
@@ -41,7 +47,7 @@ jobs:
         working-directory: build/ios/iphoneos
         run: zip -qq -r -9 FlutterApp.ipa Payload
 
-      # 7️⃣ Upload IPA as a release artifact
+      # 9️⃣ Upload IPA as a release artifact
       - name: Upload IPA to Release
         uses: svenstaro/upload-release-action@v2
         with:
