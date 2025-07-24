@@ -7,24 +7,24 @@ jobs:
   build-ios:
     runs-on: macos-14
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 2️⃣ Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.32.7'
           channel: stable
 
-      # 🔥 Force Xcode 15.4 (Swift 5.10)
+      # 🔥 3️⃣ Force Xcode 15.4 (fixes Firebase Swift errors)
       - name: Select Xcode 15.4
         run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
 
+      # 4️⃣ Clean and fetch dependencies
       - name: Flutter clean
         run: flutter clean
-
-      - name: Regenerate iOS folder
-        run: flutter create .
 
       - name: Install Flutter dependencies
         run: flutter pub get
@@ -32,17 +32,20 @@ jobs:
       - name: Precache iOS
         run: flutter precache --ios
 
-      - name: Clean & install CocoaPods
+      # 5️⃣ Clean and install CocoaPods
+      - name: Install CocoaPods
         working-directory: ios
         run: |
-          pod cache clean --all
-          rm -rf Pods Podfile.lock
+          pod repo update
+          pod deintegrate
           pod install --repo-update
 
-      - name: Build iOS
+      # 6️⃣ Build iOS without codesigning
+      - name: Build iOS (no codesign)
         run: flutter build ios --release --no-codesign
 
-      - name: Create Payload
+      # 7️⃣ Package IPA
+      - name: Create Payload folder
         working-directory: build/ios/iphoneos
         run: mkdir Payload && mv Runner.app Payload/
 
@@ -50,6 +53,7 @@ jobs:
         working-directory: build/ios/iphoneos
         run: zip -qq -r -9 FlutterApp.ipa Payload
 
+      # 8️⃣ Upload IPA as artifact
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
