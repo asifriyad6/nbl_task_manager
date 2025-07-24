@@ -8,53 +8,45 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      # 1️⃣ Checkout your repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.7'   # Match your local Flutter version
+          flutter-version: '3.32.7'
           channel: stable
 
-      # 3️⃣ Clean project
       - name: Clean Flutter project
         run: flutter clean
 
-      # 4️⃣ Generate iOS platform folders (creates .ios/Flutter/podhelper.rb)
+      # ✅ This step generates .ios/Flutter/podhelper.rb
       - name: Generate iOS platform folders
         run: flutter create .
 
-      # 5️⃣ Install Flutter dependencies
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      # 6️⃣ Install CocoaPods (ensures latest version)
       - name: Install CocoaPods
         run: |
           sudo gem install cocoapods
           pod repo update
 
-      # 7️⃣ Pre-generate iOS build to ensure .ios folder exists
+      # ✅ Extra safety: run a prebuild to make sure .ios exists
       - name: Pre-generate iOS build
         run: flutter build ios --no-codesign || true
 
-      # 8️⃣ Debug: list files to confirm .ios was generated
-      - name: Debug list files
-        run: ls -la && ls -la .ios && ls -la .ios/Flutter || true
+      # ✅ Debug: check that podhelper.rb now exists
+      - name: List Flutter helper
+        run: ls -R .ios || true
 
-      # 9️⃣ Run pod install explicitly
       - name: Run pod install
         working-directory: ios
         run: pod install --verbose
 
-      # 🔟 Build iOS (no codesign)
       - name: Build iOS (no codesign)
         run: flutter build ios --release --no-codesign
 
-      # 1️⃣1️⃣ Package .ipa
       - name: Create Payload folder
         working-directory: build/ios/iphoneos
         run: mkdir Payload && mv Runner.app Payload/
@@ -63,7 +55,6 @@ jobs:
         working-directory: build/ios/iphoneos
         run: zip -qq -r -9 FlutterApp.ipa Payload
 
-      # 1️⃣2️⃣ Upload IPA to GitHub Release
       - name: Upload IPA to Release
         uses: svenstaro/upload-release-action@v2
         with:
