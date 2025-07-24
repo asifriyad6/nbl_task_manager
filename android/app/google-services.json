@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "697803484865",
+    "project_id": "nbl-task-manager-b9664",
+    "storage_bucket": "nbl-task-manager-b9664.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:697803484865:android:705283d530024ccb602e40",
+        "android_client_info": {
+          "package_name": "com.nationalbankplc.task_manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC56UfPaxgbgJl2ADf5bVdDzo481cK-4YM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
