@@ -5,40 +5,65 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-13   # ✅ Use macOS 13 to get Xcode 15.4 (Swift 5.10)
+    runs-on: macos-14 # ✅ Use macOS 14 image (contains Xcode 15.4)
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 2️⃣ Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.32.7'
           channel: stable
 
-      # ✅ Force Xcode 15.4 (Swift 5.10)
+      # 🔎 Debug: List available Xcode versions
+      - name: List installed Xcode versions
+        run: ls /Applications | grep Xcode
+
+      # 🔎 Debug: Print currently selected Xcode path
+      - name: Print current Xcode path
+        run: xcode-select -p
+
+      # 3️⃣ Switch to Xcode 15.4 (required for Firebase Swift compatibility)
       - name: Select Xcode 15.4
         run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
 
+      # 🔎 Debug: Verify Xcode version
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      # 4️⃣ Clean Flutter build
       - name: Flutter clean
         run: flutter clean
 
-      - name: Install Flutter dependencies
+      # 5️⃣ Get Flutter dependencies
+      - name: Flutter pub get
         run: flutter pub get
 
-      - name: Precache iOS
+      # 6️⃣ Precache iOS
+      - name: Flutter precache iOS
         run: flutter precache --ios
 
-      - name: Install CocoaPods
+      # 7️⃣ Install CocoaPods
+      - name: Install CocoaPods dependencies
         working-directory: ios
         run: |
           pod repo update
           pod deintegrate
           pod install --repo-update
 
+      # 🔎 Debug: Pod environment
+      - name: Pod environment
+        working-directory: ios
+        run: pod env
+
+      # 8️⃣ Build iOS app (no codesign)
       - name: Build iOS (no codesign)
         run: flutter build ios --release --no-codesign
 
+      # 9️⃣ Package IPA
       - name: Create Payload folder
         working-directory: build/ios/iphoneos
         run: mkdir Payload && mv Runner.app Payload/
@@ -47,7 +72,8 @@ jobs:
         working-directory: build/ios/iphoneos
         run: zip -qq -r -9 FlutterApp.ipa Payload
 
-      - name: Upload IPA
+      # 🔟 Upload IPA artifact
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: FlutterApp
