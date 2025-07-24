@@ -5,52 +5,48 @@ on:
 
 jobs:
   build-ios:
-    name: 🎉 iOS Build
-    runs-on: macos-13   # ✅ Pin to macOS 13 which includes Xcode 15.2 (stable with Firebase)
+    name: 📦 Build iOS IPA
+    runs-on: macos-latest
+
     steps:
-      - uses: actions/checkout@v3
+      # 1️⃣ Checkout your repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      # ✅ Select a specific Xcode version
-      - name: Select Xcode 15.2
-        run: sudo xcode-select -s /Applications/Xcode_15.2.app
-
-      - uses: subosito/flutter-action@v2
+      # 2️⃣ Setup Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
-          architecture: x64
+          flutter-version: '3.24.0' # use your Flutter version
+          channel: stable
 
+      # 3️⃣ Install Flutter dependencies
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      - name: Update CocoaPods repo
-        run: pod repo update
-        working-directory: ios
+      # 4️⃣ Precache iOS and generate .ios folder (important!)
+      - name: Precache iOS
+        run: flutter precache --ios
 
-      # ✅ Make sure your Podfile sets platform :ios, '13.0'
-      - name: Install CocoaPods
-        run: pod install
-        working-directory: ios
-
-      - name: Build iOS
+      # 5️⃣ Build iOS without codesign
+      - name: Build iOS (no codesign)
         run: flutter build ios --release --no-codesign
 
-      - name: Prepare IPA payload
-        run: mkdir Payload
+      # 6️⃣ Package .ipa
+      - name: Create Payload folder
         working-directory: build/ios/iphoneos
+        run: mkdir Payload && mv Runner.app Payload/
 
-      - name: Move app to Payload
-        run: mv Runner.app Payload
+      - name: Zip IPA
         working-directory: build/ios/iphoneos
+        run: zip -qq -r -9 FlutterApp.ipa Payload
 
-      - name: Zip output
-        run: zip -qq -r -9 FlutterIpaExport.ipa Payload
-        working-directory: build/ios/iphoneos
-
-      - name: Upload binaries to release
+      # 7️⃣ Upload IPA as a release artifact
+      - name: Upload IPA to Release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: build/ios/iphoneos/FlutterIpaExport.ipa
-          tag: v1.0
+          file: build/ios/iphoneos/FlutterApp.ipa
+          tag: v1.0.0
           overwrite: true
-          body: "This is first release"
+          body: "First iOS release built by GitHub Actions"
