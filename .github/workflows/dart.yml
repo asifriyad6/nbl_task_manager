@@ -1,4 +1,4 @@
-name: iOS-ipa-build
+name: iOS IPA Build
 
 on:
   workflow_dispatch:
@@ -10,53 +10,46 @@ jobs:
     steps:
       # 1️⃣ Checkout your repository
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      # 2️⃣ Setup Flutter environment
+      # 2️⃣ Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.7' # match your Flutter version
+          flutter-version: '3.22.3' # or your Flutter version
           channel: stable
 
-      # 3️⃣ Install CocoaPods (pin to version if needed)
-      - name: Install CocoaPods
+      # 3️⃣ Setup Ruby & CocoaPods
+      - name: Setup CocoaPods
         run: |
-          sudo gem install cocoapods -v 1.16.2
+          sudo gem install cocoapods -v 1.15.2
           pod --version
 
-      # 4️⃣ Pre-cache iOS artifacts (saves time later)
-      - name: Flutter precache iOS
-        run: flutter precache --ios
-
-      # 5️⃣ Clean Flutter project
+      # 4️⃣ Clean Flutter build
       - name: Flutter clean
         run: flutter clean
 
-      # 6️⃣ Get Flutter dependencies
+      # 5️⃣ Install Flutter dependencies
       - name: Flutter pub get
         run: flutter pub get
 
-      # 7️⃣ CocoaPods cleanup
-      - name: CocoaPods cleanup
+      # 6️⃣ Precache iOS artifacts
+      - name: Flutter precache for iOS
+        run: flutter precache --ios
+
+      # 7️⃣ Clean and reinstall CocoaPods
+      - name: CocoaPods reset & install
         run: |
           cd ios
           pod deintegrate || true
-          pod cache clean --all || true
           pod repo update
-          rm -rf Pods Podfile.lock
-
-      # 8️⃣ Install CocoaPods dependencies
-      - name: Install CocoaPods dependencies
-        run: |
-          cd ios
           pod install --verbose
 
-      # 9️⃣ Build iOS app (no codesign)
-      - name: Build iOS (no codesign)
+      # 8️⃣ Build iOS (Release, no codesign)
+      - name: Flutter build iOS
         run: flutter build ios --release --no-codesign
 
-      # 🔟 Package into IPA
+      # 9️⃣ Package IPA
       - name: Package IPA
         working-directory: build/ios/iphoneos
         run: |
@@ -64,9 +57,9 @@ jobs:
           mv Runner.app Payload/
           zip -qr FlutterApp.ipa Payload
 
-      # 1️⃣1️⃣ Upload IPA as build artifact (keeps it in Actions, not GitHub Releases)
-      - name: Upload IPA Artifact
-        uses: actions/upload-artifact@v4
+      # 🔟 Upload IPA artifact to workflow
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: FlutterApp-ipa
+          name: FlutterApp.ipa
           path: build/ios/iphoneos/FlutterApp.ipa
