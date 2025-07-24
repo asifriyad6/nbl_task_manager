@@ -13,20 +13,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Flutter
+      # 2️⃣ Setup Flutter (ensure correct Flutter version with Dart 3.8.1)
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.32.7'
           channel: stable
 
-      # 3️⃣ Install Flutter dependencies
-      - name: Install Flutter dependencies
-        run: flutter pub get
+      # 3️⃣ Clean Flutter project (optional but recommended)
+      - name: Clean Flutter project
+        run: flutter clean
 
-      # 4️⃣ Precache iOS and generate .ios folder (important!)
-      - name: Precache iOS
-        run: flutter precache --ios
+      # 4️⃣ Install Flutter dependencies and generate iOS tooling files
+      - name: Prepare iOS build folder
+        run: flutter pub get && flutter precache ios
 
       # 5️⃣ Build iOS without codesign
       - name: Build iOS (no codesign)
