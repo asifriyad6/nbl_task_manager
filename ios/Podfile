@@ -12,7 +12,7 @@ project 'Runner', {
 def flutter_root
   generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
   unless File.exist?(generated_xcode_build_settings_path)
-    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
+    raise "#{generated_xcode_build_settings_path} must exist. Run flutter pub get first."
   end
 
   File.foreach(generated_xcode_build_settings_path) do |line|
@@ -30,14 +30,7 @@ target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
-  # ✅ Pin Firebase to a version compatible with Swift 5.x
-  pod 'Firebase/CoreOnly', '10.25.0'
-  pod 'Firebase/Messaging', '10.25.0' 
-
-  # 👉 If you use more Firebase subspecs, pin them here as well:
-  pod 'Firebase/Auth', '10.25.0'
-  pod 'Firebase/Firestore', '10.25.0'
-
+  # ✅ REMOVE all manual Firebase pods — let Flutter plugins handle it
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 
